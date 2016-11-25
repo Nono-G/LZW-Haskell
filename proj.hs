@@ -1,3 +1,18 @@
+--
+-- *****************************************
+-- Implémentation Haskell de l'algorithme de compression/decompression LZW
+-- *****************************************
+import Data.Char
+
+-- *****************************************
+-- DIVERS
+-- *****************************************
+fromJust :: Maybe a -> a
+fromJust (Just x) = x
+
+-- *****************************************
+-- DECLARATION DES TYPES ET CLASSES
+-- *****************************************
 type Code = Int
 
 class Table a where
@@ -10,17 +25,9 @@ class Table a where
 
 data AssoList = C (String,Code) AssoList | Vide
 
-alV :: AssoList
-alV = Vide
-al1 :: AssoList
-al1 = C ("a",0) (C ("b",1) (C ("ab",2) (C ("c",3) (C ("bc",4) Vide))))
---al2 :: AssoList
---al2 C () (C () (C () ()))
-
-alLast :: AssoList -> (String,Code)
-alLast (C paire Vide) = paire
-alLast (C paire suite) = alLast suite
-
+-- *****************************************
+-- INSTANCIATION D'ASSOLIST A SHOW
+-- *****************************************
 bodyShow :: AssoList -> String
 bodyShow Vide = ""
 bodyShow (C (x,s) Vide) = "("++(show x)++","++(show s)++")"
@@ -28,6 +35,9 @@ bodyShow (C (x,s) reste) = "("++(show x)++","++(show s)++"):"++(bodyShow reste)
 instance Show AssoList where
 	show al = "["++(bodyShow al)++"]";
 
+-- *****************************************
+-- INSTANCIATION D'ASSOLIST A TABLE
+-- *****************************************
 prefixeAcc :: String -> String -> String -> String
 prefixeAcc acc [] ys = acc
 prefixeAcc acc xs [] = acc
@@ -68,32 +78,48 @@ instance Table AssoList where
 			 in (pref, (codeOf al pref), (drop (length pref) mot))
 	--
 
+-- *****************************************
+-- INITIALISATION DE TABLES (ASSOLIST)
+-- *****************************************
+--Contient
 contains :: Eq a => [a] -> a -> Bool
 contains [] _ = False
 contains (x:xs) y = (x == y) || contains xs y
 
+--Renvoie une unique occurence de chaque élément d'une liste, dans l'odre de première apparition
 charsInAcc :: Eq a => [a] -> [a] -> [a]
 charsInAcc [] ys = ys
 charsInAcc (x:xs) ys = if ( contains ys x)
 			then charsInAcc xs ys
 			else charsInAcc xs (ys ++ [x])
 
+--Met tous les éléments d'une chaine dans une assoList, dans l'ordre inverse.
 initTable0 :: String -> AssoList
 initTable0 [] = Vide
 initTable0 (x:xs) = insert (initTable0 xs) [x]
 
-initTable :: String -> AssoList
-initTable s = initTable0 (reverse (charsInAcc s ""))
+--Met tous les éléments d'une chaine dans une assoList, dans l'ordre.
+initTableAL :: String -> AssoList
+initTableAL s = initTable0 (reverse (charsInAcc s ""))
 
-fromJust :: Maybe a -> a
-fromJust (Just x) = x
+--Met tous les éléments de la table Ascii dans une assoList
+initTableALASCII0 :: Int -> AssoList -> AssoList
+initTableALASCII0 128 t = t
+initTableALASCII0 n t = initTableALASCII0 (n+1) (insert t [chr n])
+initTableALASCII :: AssoList
+initTableALASCII = initTableALASCII0  0 Vide
 
+-- *****************************************
+-- ALGORITHMES COMPRESSION / DECOMPRESSION
+-- *****************************************
+--ENCODE AVEC ACCUMULATEUR
 lzwEncode0 :: Table a => a -> String -> [Code]
 lzwEncode0 al texte = let (pref, mc, suff) = split al texte
 			in if suff == []
 				then [(fromJust mc)]
 				else ((fromJust mc):(lzwEncode0 (insert al (pref++[(head suff)])) suff))
 
+--ENCODE AVEC ACCUMULATEUR, AVEC DEBUG : AFFICHAGE DE LA TABLE AVEC
 lzwEncode0D :: Table a => a -> String -> ([Code],a)
 lzwEncode0D al texte = let (pref, mc, suff) = split al texte
 			in if suff == []
@@ -101,8 +127,7 @@ lzwEncode0D al texte = let (pref, mc, suff) = split al texte
 				else let (cs, t) = (lzwEncode0D (insert al (pref++[(head suff)])) suff)
 					in (((fromJust mc):cs),t)	
 
-
-
+--DECODAGE AVEC ACCUMULATEUR
 lzwDecode0 :: Table a => a -> String -> [Code] -> String 
 lzwDecode0 table str1 [] = []
 lzwDecode0 table [] (c:cs) = let output = fromJust (stringOf table c)  in
@@ -110,20 +135,29 @@ lzwDecode0 table [] (c:cs) = let output = fromJust (stringOf table c)  in
 
 lzwDecode0 table prev (c:cs) = let mOutput = (stringOf table c) in
 					if mOutput == Nothing
-						then lzwDecode0 (insert table ((head prev):prev)) prev (c:cs)
+						then lzwDecode0 (insert table (prev++[(head prev)])) prev (c:cs)
 						else let output = fromJust mOutput in
 							let new = prev++[(head output)] in
 								if (isIn table new )
 									then  output++(lzwDecode0 table output cs) 
 									else output++(lzwDecode0 (insert table new) output cs)
 
-lzwDecodeA :: Table a => a -> [Code] -> String
-lzwDecodeA table codes = lzwDecode0 table [] codes
-
+--ENCODAGE DIRECT EN ASCII (A:ASCII)
 lzwEncodeA :: String -> [Code]
-lzwEncodeA str = lzwEncode0 (initTable str) str
+lzwEncodeA str = lzwEncode0 initTableALASCII str
 
+--ENCODAGE DIRECT EN ASCII (A:ASCII), AVEC DEBUG
 lzwEncodeAD :: String -> ([Code],AssoList)
-lzwEncodeAD str = lzwEncode0D (initTable str) str
+lzwEncodeAD str = lzwEncode0D initTableALASCII str
 
---lzwDecode :: Table a => a -> [Code] -> String
+--ENCODAGE AVEC TABLE PERSO (C:CUSTOM)
+lzwEncodeC :: Table a => a -> String -> [Code]
+lzwEncodeC table str = lzwEncode0 table str
+
+--DECODAGE DIRECT EN ASCII (A:ASCII)
+lzwDecodeA :: [Code] -> String
+lzwDecodeA codes = lzwDecode0 initTableALASCII [] codes
+
+--DECODAGE AVEC TABLE PERSO (C:CUSTOM)
+lzwDecodeC :: Table a => a -> [Code] -> String
+lzwDecodeC table codes = lzwDecode0 table [] codes
