@@ -100,6 +100,26 @@ lzwEncode0D al texte = let (pref, mc, suff) = split al texte
 				then ([(fromJust mc)],al)
 				else let (cs, t) = (lzwEncode0D (insert al (pref++[(head suff)])) suff)
 					in (((fromJust mc):cs),t)	
+
+
+
+lzwDecode0 :: Table a => a -> String -> [Code] -> String 
+lzwDecode0 table str1 [] = []
+lzwDecode0 table [] (c:cs) = let output = fromJust (stringOf table c)  in
+					output ++ (lzwDecode0 table output cs)
+
+lzwDecode0 table prev (c:cs) = let mOutput = (stringOf table c) in
+					if mOutput == Nothing
+						then lzwDecode0 (insert table ((head prev):prev)) prev (c:cs)
+						else let output = fromJust mOutput in
+							let new = prev++[(head output)] in
+								if (isIn table new )
+									then  output++(lzwDecode0 table output cs) 
+									else output++(lzwDecode0 (insert table new) output cs)
+
+lzwDecodeA :: Table a => a -> [Code] -> String
+lzwDecodeA table codes = lzwDecode0 table [] codes
+
 lzwEncodeA :: String -> [Code]
 lzwEncodeA str = lzwEncode0 (initTable str) str
 
