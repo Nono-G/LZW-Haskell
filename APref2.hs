@@ -10,12 +10,14 @@ class Table a where
 	isIn :: a -> String -> Bool
 	split :: a -> String -> (String, Maybe Code, String)
 
+
 instance Show APref where
-	show ap = ""
+	show (N []) = []
+	show (N ((ch,co,sa):suite)) = "("++(show ch)++","++(show co)++",["++(show sa)++"])"++(show (N suite))
 --
 
 instance Table APref where
-	empty = []
+	empty = N []
 	--
 	insert ap str = ap
 	--
@@ -27,3 +29,15 @@ instance Table APref where
 	--
 	split ap str = ("",Nothing,"")
 --
+
+--EXEMPLES
+exap1 :: APref
+exap1 = N [('e',5,empty)]
+
+exap2 :: APref
+exap2 = N[('c',3,empty),('d',4,exap1)]
+
+exap3 :: APref
+exap3 = N [('a',1,exap2),('b',2,empty)]
+
+
