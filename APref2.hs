@@ -41,8 +41,13 @@ insert0 (N branches) (c:str) cn = let x = nBranche (N branches) (c:str) in
 											else let (ch2,co2,ap2) = ((!!) branches (x-1)) in
 												N ((take (x-1) branches)++[(ch2,co2,(insert0 ap2 str cn))]++(drop x branches))
 --
-splitAcc :: String -> APref -> String -> (String, Maybe Code, String)
---splitAcc pref (N []) str = pref
+splitAcc :: String -> Maybe Code -> APref -> String -> (String, Maybe Code, String)
+--splitAcc pref co (N [])
+splitAcc pref co (N branches) (c:str) = let x = nBranche (N branches) (c:str) in
+							if x == (-1)
+								then (pref, co, (c:str))
+								else let (ch,co,ap) = ((!!) branches (x-1)) in
+										splitAcc (pref++[ch]) (Just co) ap str 		
 --splitAcc pref 
 instance Table APref where
 	empty = N []
@@ -52,9 +57,9 @@ instance Table APref where
 	codeOf (N[]) str = Nothing
 	--codeOf N[() "" = Nothing
 	--le cas où elle retourne un code
-	codeOf ( N ( (ch0,c0,ap0):suite ) ) str = if ch0 == (head str)
-					then Just c0
-					else let (ch1,c1,ap1) = head suite in codeOf (tail suite) ch0++ch1 
+--	codeOf ( N ( (ch0,c0,ap0):suite ) ) str = if ch0 == (head str)
+	--				then Just c0
+		--			else let (ch1,c1,ap1) = head suite in codeOf (tail suite) ch0++ch1 
 					--else if suite == N [(ch1,c1,ap1)] then codeOf suite ch++ch1
 	--codeOf ap str = 
 	--
@@ -62,7 +67,7 @@ instance Table APref where
 	--
 	isIn ap str = False
 	--
-	split ap str = ("",Nothing,"")
+	split ap str = splitAcc "" Nothing ap str
 --
 
 --EXEMPLES
