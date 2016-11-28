@@ -65,6 +65,7 @@ instance Table APref where
 	--
 	insert ap str = insert0 ap str ((codeMax ap)+1)
 	--
+	codeOf ap [] = Nothing
 	codeOf (N [(ch,co,ap)]) [x] = if ch == x
 									then Just co
 									else Nothing
@@ -81,7 +82,7 @@ instance Table APref where
 	--
 	stringOf ap co = stringOfAcc "" ap co
 	--
-	isIn ap str = False
+	isIn ap str = (codeOf ap str) /= Nothing
 	--
 	split ap str = splitAcc "" Nothing ap str
 --
@@ -97,10 +98,7 @@ exap2 = N[('c',3,empty),('d',4,exap1)]
 exap3 :: APref
 exap3 = N [('a',1,exap2),('b',2,empty)]
 
---('v',0,[('b',0,[('g',0,[])])])('a',1,[('c',3,[])('d',4,[('e',5,[])])])('b',2,[])
---('a',1,[('g',0,[])('c',3,[])('d',4,[('e',5,[])])])('b',2,[])
---('a',1,[('b',0,[('g',0,[])])('c',3,[])('d',4,[('e',5,[])])])('b',2,[])
---('a',1,[('c',3,[])('d',4,[('d',0,[('c',0,[])])('e',5,[])])])('b',2,[])
+--('a',1,[('c',3,[])('d',4,[('e',5,[])])])('b',2,[])
 
 
 
