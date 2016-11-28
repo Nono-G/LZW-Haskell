@@ -135,7 +135,7 @@ lzwDecode0 table [] (c:cs) = let output = fromJust (stringOf table c)  in
 
 lzwDecode0 table prev (c:cs) = let mOutput = (stringOf table c) in
 					if mOutput == Nothing
-						then lzwDecode0 (insert table (prev++[(head prev)])) prev (c:cs)
+						then lzwDecode0 (insert table (prev++[(head prev)])) (prev++(head prev)) (c:cs)
 						else let output = fromJust mOutput in
 							let new = prev++[(head output)] in
 								if (isIn table new )
