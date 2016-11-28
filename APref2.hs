@@ -41,6 +41,9 @@ insert0 (N branches) (c:str) cn = let x = nBranche (N branches) (c:str) in
 											else let (ch2,co2,ap2) = ((!!) branches (x-1)) in
 												N ((take (x-1) branches)++[(ch2,co2,(insert0 ap2 str cn))]++(drop x branches))
 --
+splitAcc :: String -> APref -> String -> (String, Maybe Code, String)
+--splitAcc pref (N []) str = pref
+--splitAcc pref 
 instance Table APref where
 	empty = N []
 	--
