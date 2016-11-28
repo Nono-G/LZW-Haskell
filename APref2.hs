@@ -42,13 +42,20 @@ insert0 (N branches) (c:str) cn = let x = nBranche (N branches) (c:str) in
 												N ((take (x-1) branches)++[(ch2,co2,(insert0 ap2 str cn))]++(drop x branches))
 --
 splitAcc :: String -> Maybe Code -> APref -> String -> (String, Maybe Code, String)
---splitAcc pref co (N [])
 splitAcc pref co (N branches) (c:str) = let x = nBranche (N branches) (c:str) in
 							if x == (-1)
 								then (pref, co, (c:str))
 								else let (ch,co,ap) = ((!!) branches (x-1)) in
-										splitAcc (pref++[ch]) (Just co) ap str 		
---splitAcc pref 
+										splitAcc (pref++[ch]) (Just co) ap str
+--
+stringOfAcc :: String -> APref -> Code -> Maybe String
+stringOfAcc acc (N []) coR = Nothing
+stringOfAcc acc (N ((ch, co, ap):branches)) coRech = if co == coRech
+											then Just (acc++[ch])
+											else let rep = stringOfAcc (acc++[ch]) ap coRech in
+														if rep == Nothing
+															then stringOfAcc acc (N branches) coRech
+															else rep
 instance Table APref where
 	empty = N []
 	--
@@ -63,7 +70,7 @@ instance Table APref where
 					--else if suite == N [(ch1,c1,ap1)] then codeOf suite ch++ch1
 	--codeOf ap str = 
 	--
-	stringOf ap co = Nothing
+	stringOf ap co = stringOfAcc "" ap co
 	--
 	isIn ap str = False
 	--
