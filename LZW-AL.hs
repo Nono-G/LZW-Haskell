@@ -3,6 +3,7 @@
 -- Implémentation Haskell de l'algorithme de compression/decompression LZW
 -- *****************************************
 import Data.Char
+import Test.QuickCheck
 
 -- *****************************************
 -- DIVERS
@@ -104,7 +105,7 @@ initTableAL s = initTable0 (reverse (charsInAcc s ""))
 
 --Met tous les éléments de la table Ascii dans une assoList
 initTableALASCII0 :: Int -> AssoList -> AssoList
-initTableALASCII0 128 t = t
+initTableALASCII0 256 t = t
 initTableALASCII0 n t = initTableALASCII0 (n+1) (insert t [chr n])
 initTableALASCII :: AssoList
 initTableALASCII = initTableALASCII0  0 Vide
@@ -114,6 +115,7 @@ initTableALASCII = initTableALASCII0  0 Vide
 -- *****************************************
 --ENCODE AVEC ACCUMULATEUR
 lzwEncode0 :: Table a => a -> String -> [Code]
+lzwEncode0 al [] = []
 lzwEncode0 al texte = let (pref, mc, suff) = split al texte
 			in if suff == []
 				then [(fromJust mc)]
@@ -161,3 +163,13 @@ lzwDecodeA codes = lzwDecode0 initTableALASCII [] codes
 --DECODAGE AVEC TABLE PERSO (C:CUSTOM)
 lzwDecodeC :: Table a => a -> [Code] -> String
 lzwDecodeC table codes = lzwDecode0 table [] codes
+
+-- *****************************************
+-- Tests
+-- *****************************************
+propReverseA :: [Char] -> Bool
+propReverseA str = lzwDecodeA (lzwEncodeA str) == str 
+-- quickCheckWith stdArgs { maxSuccess = 500 } propReverseA
+
+
+
