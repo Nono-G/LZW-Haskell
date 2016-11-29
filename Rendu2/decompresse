@@ -1,0 +1,43 @@
+Compression
+On démarre avec une table contenant tous les caractères individuellement, avec leurs traductions. On parcourt
+un flux de caractères, en lisant dans le flux, le plus long préfixe
+w
+contenu dans la table. On écrit alors en
+sortie le code de ce préfixe. Si le flux n’est pas terminé, on itère, mais auparavant on ajoute à la table le mot
+wc
+(avec un nouveau code), où
+c
+est le prochain caractère du flux.
+Décompression
+On s’aperçoit qu’on peut décompresser un flux de codes en reconstruisant la table de traduction à fur
+et mesure. On démarre avec la table contenant tous les caractères (et leur code associé), comme pour la
+compression.
+Quand on lit un code du flux, on cherche son image inverse dans la table, c’est-à-dire la chaîne auquel ce
+code est attribué, et on produit cette chaîne comme résultat partiel. On itère avec le reste du flux, mais en se
+rappelant que la construction du flux de codes a étendu la table de traduction en ajoutant la correspondance
+entre ce mot et le premier caractère du décodage du prochain code à venir.
+Il se pose un problème, car en principe nous ne savons pas décoder le prochain code (qui pourrait ne pas être
+un le code d’un mot dans la table).
+Première solution.
+L’algorithme décrit sur wikipedia propose de résoudre le problème en ajoutant la
+correspondance entre le mot précèdent et le premier caractère de la traduction du code courant. Nous avons
+donc besoin d’un « buffer »
+w
+où enregistrer le mot précèdent pour l’itération courante. Ainsi, si le flux de
+code n’est pas terminé, on enregistre un nouveau code, dont la chaîne associée est celle du code précèdent
+plus la première lettre de la chaîne associée au code courant. Le schéma de décompression, comme décrit,
+est imparfait car la mise à jour de la table a lieu en retard d’une itération par rapport à la compression ; il
+se peut donc que l’on trouve pas la traduction (inverse) du code dans la table. Par ailleurs, dans ce cas, la
+traduction du code courant est nécessairement de la forme
+wc
+où
+w
+ce le mot dans le buffer et
+c
+est aussi la
+première lettre de
+w
+. Donc, au cas que l’on ne trouve pas la traduction du code courant dans la table, on
+écrit le
+wc
+en sortie, on l’ajoute à la table, et on itère avec le reste du flux.

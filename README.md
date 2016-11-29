@@ -1,2 +1,2 @@
 # LZW-Haskell
-LZM compressing algorith in Haskell
+LZM compressing algorithm in Haskell
